@@ -5,17 +5,23 @@
 #
 #
 
+# --> Now uses pygame.midi instead of rtmidi
+
 
 import time
 import random
 import pygame
+import pygame.midi
 
 pygame.init()
 
 pygame.midi.init()
 
-midiout = pygame.midi.Output(0)
-available_ports = midiout.get_ports()
+print pygame.midi.get_default_output_id()
+print pygame.midi.get_device_info(0)
+
+midi_Output = pygame.midi.Output(0)
+midi_Output.set_instrument(0)
 
 
 # Defining chordStruct, a list of chords.
@@ -42,9 +48,6 @@ chordStruct = [
 [0, 2, 7, 9]
 
     ]
-
-# (Calls "midiout.send_message" for list passed into "chord" argument) old
-#
 
 # playChord function:
 #
@@ -80,7 +83,12 @@ def playChord(position, key, octave):
         note = chord[i]
 
         chordMIDI = [0x90, root + note, 112]
-        pygame.midi.write_short(chordMIDI)
+
+        #midi_Output.write_short(chordMIDI)  ## not sure why this isn't working?
+
+        ## had to use .note_on instead...
+
+        midi_Output.note_on(root + note, 112, 0)
         
 
         i += 1
@@ -94,7 +102,15 @@ def stopChord():
     
     while i<120 :
         notes_off = (0x90, i, 0)
-        pygame.midi.write_short(notes_off)
+
+        #again here...
+
+        #midi_Output.write_short(notes_off)
+
+        # .note_off instead...
+
+        midi_Output.note_off(i, None, 0)
+
         i += 1
 
 # Shockingly ugly main loop
@@ -155,16 +171,3 @@ while counter < 1000:
 
     stopChord()
 
-
-del midiout
-
-### original code that I pilfered...
-#
-#
-# note_on = [0x90, 60, 112] # channel 1, middle C, velocity 112
-# note_off = [0x80, 60, 0]
-# midiout.send_message(note_on)
-# time.sleep(0.5)
-# midiout.send_message(note_off)
-# time.sleep(0.5)
-#
